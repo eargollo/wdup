@@ -1,4 +1,4 @@
-#app {
+ #app {
     height: 100vh;
     text-align: center;
 }
@@ -56,4 +56,16 @@
 .input-box .input:focus {
     border: none;
     background-color: rgba(255, 255, 255, 1);
+} 
+
+.even {
+    background-color: rgba(47, 58, 74, 1);
+    padding: 5px;
+    border: white 1px solid;
+}
+
+.odd {
+    /* background-color: rgba(47, 58, 74, 1); */
+    padding: 5px;
+    border: white 1px solid;
 }

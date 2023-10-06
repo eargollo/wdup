@@ -1,8 +1,8 @@
 package main
 
 import (
+	"changeme/pkg/dupfile"
 	"context"
-	"fmt"
 )
 
 // App struct
@@ -22,6 +22,47 @@ func (a *App) startup(ctx context.Context) {
 }
 
 // Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+func (a *App) Greet(name string) [][]*dupfile.File {
+	return [][]*dupfile.File{
+		{
+			&dupfile.File{
+				Path: "first/first",
+				Name: "first",
+				Size: 123,
+				Hash: []byte("hash"),
+			},
+			&dupfile.File{
+				Path: "first/second",
+				Name: "second",
+				Size: 123,
+				Hash: []byte("hash"),
+			},
+		},
+		{
+			&dupfile.File{
+				Path: "second/first",
+				Name: "first",
+				Size: 1234,
+				Hash: []byte("hash"),
+			},
+			&dupfile.File{
+				Path: "second/second",
+				Name: "second",
+				Size: 1234,
+				Hash: []byte("hash"),
+			},
+			&dupfile.File{
+				Path: "second/third",
+				Name: "third",
+				Size: 1234,
+				Hash: []byte("hash"),
+			},
+			&dupfile.File{
+				Path: "second/fourth",
+				Name: "fourth",
+				Size: 1234,
+				Hash: []byte("hash"),
+			},
+		},
+	}
 }

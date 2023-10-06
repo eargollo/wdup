@@ -24,3 +24,8 @@ body {
     height: 100vh;
     text-align: center;
 }
+
+.file {
+    text-align: left;
+    margin:0;
+} 

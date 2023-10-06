@@ -4,7 +4,7 @@ import './App.css';
 import {Greet} from "../wailsjs/go/main/App";
 
 function App() {
-    const [resultText, setResultText] = useState("Please enter your name below 👇");
+    const [resultText, setResultText] = useState([]);
     const [name, setName] = useState('');
     const updateName = (e) => setName(e.target.value);
     const updateResultText = (result) => setResultText(result);
@@ -15,12 +15,20 @@ function App() {
 
     return (
         <div id="App">
-            <img src={logo} id="logo" alt="logo"/>
-            <div id="result" className="result">{resultText}</div>
             <div id="input" className="input-box">
                 <input id="name" className="input" onChange={updateName} autoComplete="off" name="input" type="text"/>
                 <button className="btn" onClick={greet}>Greet</button>
             </div>
+            { resultText.map((item, index) => ( 
+                <form className={index%2?"odd":"even"}>
+                {item.map((file) => (
+                    <div className="file">
+                        <input type="checkbox" id={index} />
+                        <span>{file.path}</span>
+                    </div>
+                ))}
+                </form>
+            ))}
         </div>
     )
 }
