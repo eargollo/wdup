@@ -3,6 +3,9 @@ package main
 import (
 	"changeme/pkg/dupfile"
 	"context"
+	"log"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -19,6 +22,17 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+}
+
+// Greet returns a greeting for the given name
+func (a *App) PathSelect(name string) string {
+	selection, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Cabrum",
+	})
+	if err != nil {
+		log.Printf("Error: %s", err.Error())
+	}
+	return selection
 }
 
 // Greet returns a greeting for the given name
