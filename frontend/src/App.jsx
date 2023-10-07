@@ -5,21 +5,31 @@ import {Greet} from "../wailsjs/go/main/App";
 import {PathSelect} from "../wailsjs/go/main/App";
 
 function App() {
+    const [folderList, setFolderList] = useState([]);
     const [resultText, setResultText] = useState([]);
-    const [folderText, setFolderText] = useState("/");
-    const [name, setName] = useState('');
-    const updateName = (e) => setName(e.target.value);
     const updateResultText = (result) => setResultText(result);
 
-    const inputFile = useRef(null);
-
     function greet() {
-        Greet(name).then(updateResultText);
+        Greet("").then(updateResultText);
     }
 
-    function pathSelect() { 
-        PathSelect("a").then(setFolderText);
+    function pathSelect(e) { 
+        PathSelect("a").then(addFile);
         e.preventDefault();
+    }
+
+    function addFile(file) {
+        console.log(file)
+        setFolderList([...folderList, file]);
+    }
+
+    function deleteFolderFromList(e) {
+        console.log(e);
+        console.log(e.target.id);
+        const index = e.target.id;
+        const newList = [...folderList];
+        newList.splice(index, 1);
+        setFolderList(newList);
     }
 
     function deleteFile(e) {
@@ -34,26 +44,19 @@ function App() {
         parent.document.getElementById(`filename_${e.target.id}`).classList.toggle("file-selected");
     }
 
-    function onChangeFile(e) {
-        // e,stopPropagation();
-        e.preventDefault();
-        console.log(e);
-        var files = e.target.files;
-        e.currentTarget.attributes[2].ownerElement.files
-        console.log(files)
-    }
-
     return (
         <div id="App">
-            <div>
-                {/* <input onChange={onChangeFile} type="file" id="filepicker" name="fileList" webkitdirectory={""} directory={""} multiple={true} /> */}
-                {/* <input onChange={onChangeFile} type='file' id='file' ref={inputFile} webkitdirectory multiple/> */}
-            </div>
             <div id="input" className="input-box">
-                <input id="name" className="input" onChange={updateName} autoComplete="off" name="input" type="text" value={folderText}/>
-                <button className="btn" onClick={pathSelect}>Select Path</button>
+                <button className="btn" onClick={pathSelect}>Add Folter</button>
                 <button className="btn" onClick={greet}>Run</button>
-                {/* <input type='file' id='file' ref={inputFile} style={{display: 'none'}}/> */}
+                <div>
+                    {folderList.map((item, index) => (
+                        <div key={index}>
+                            <span>{item}</span>
+                            <button id={index} className="btn" onClick={deleteFolderFromList}>Delete</button>
+                        </div>
+                    ))}  
+                </div>
             </div>
             <div id="result">
                 <button className='btn' onClick={deleteFile}>Delete selected</button>
@@ -61,7 +64,7 @@ function App() {
                     <div id={index} className={index%2?"odd":"even"}>
                     {item.map((file, fid) => (
                         <div className="file">
-                            <input type="checkbox" id={`${index}_${fid}`} key={file.name} onClick={textHighlight} />
+                            <input type="checkbox" id={`${index}_${fid}`} key={`${index}_${fid}`} onClick={textHighlight} />
                             <span id={`filename_${index}_${fid}`}>{file.path}</span>
                         </div>
                     ))}
