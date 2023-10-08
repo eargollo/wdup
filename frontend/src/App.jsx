@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import './App.css';
 import {Greet} from "../wailsjs/go/main/App";
 import {PathSelect} from "../wailsjs/go/main/App";
+import {DuplicateSearch} from "../wailsjs/go/main/App";
 
 function App() {
     const [folderList, setFolderList] = useState([]);
@@ -44,11 +45,17 @@ function App() {
         parent.document.getElementById(`filename_${e.target.id}`).classList.toggle("file-selected");
     }
 
+    function runSearch(e) {
+        console.log(e)
+        DuplicateSearch(folderList).then(updateResultText);
+    }
+
     return (
         <div id="App">
             <div id="input" className="input-box">
                 <button className="btn" onClick={pathSelect}>Add Folter</button>
-                <button className="btn" onClick={greet}>Run</button>
+                <button className="btn" onClick={greet}>Emulate</button>
+                <button className="btn" onClick={runSearch}>Search Duplicates</button>
                 <div>
                     {folderList.map((item, index) => (
                         <div key={index}>
@@ -61,9 +68,9 @@ function App() {
             <div id="result">
                 <button className='btn' onClick={deleteFile}>Delete selected</button>
                 { resultText.map((item, index) => ( 
-                    <div id={index} className={index%2?"odd":"even"}>
+                    <div id={index} key={index} className={index%2?"odd":"even"}>
                     {item.map((file, fid) => (
-                        <div className="file">
+                        <div className="file" key={`${index}_${fid}`}>
                             <input type="checkbox" id={`${index}_${fid}`} key={`${index}_${fid}`} onClick={textHighlight} />
                             <span id={`filename_${index}_${fid}`}>{file.path}</span>
                         </div>

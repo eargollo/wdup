@@ -3,19 +3,25 @@ package main
 import (
 	"changeme/pkg/dupfile"
 	"context"
+	"fmt"
 	"log"
+	"os"
 
+	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// App struct
+// App struct1
 type App struct {
 	ctx context.Context
+	log logger.Logger
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	app := &App{}
+	app.log = logger.NewDefaultLogger()
+	return app
 }
 
 // startup is called when the app starts. The context is saved
@@ -33,6 +39,25 @@ func (a *App) PathSelect(name string) string {
 		log.Printf("Error: %s", err.Error())
 	}
 	return selection
+}
+
+// Greet returns a greeting for the given name
+func (a *App) DuplicateSearch(paths []string) [][]*dupfile.File {
+	a.log.Info(fmt.Sprintf("paths: %v", paths))
+
+	cachePath, err := a.cachePath()
+	if err != nil {
+		a.log.Error(err.Error())
+		return [][]*dupfile.File{}
+	}
+
+	df, err := dupfile.New(dupfile.WithPaths(paths), dupfile.WithCache(cachePath))
+	if err != nil {
+		a.log.Error(err.Error())
+		return [][]*dupfile.File{}
+	}
+
+	return df.Run()
 }
 
 // Greet returns a greeting for the given name
@@ -79,4 +104,15 @@ func (a *App) Greet(name string) [][]*dupfile.File {
 			},
 		},
 	}
+}
+
+// Returns the path for the cached file hashes
+func (a *App) cachePath() (string, error) {
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return homedir, err
+	}
+
+	cacheDir := homedir + "/.wdup"
+	return cacheDir, nil
 }
