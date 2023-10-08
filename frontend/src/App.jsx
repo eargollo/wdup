@@ -1,94 +1,28 @@
 import {useState} from 'react';
-import { useRef } from 'react';
 import './App.css';
-import {Greet} from "../wailsjs/go/main/App";
-import {PathSelect} from "../wailsjs/go/main/App";
-import {DuplicateSearch} from "../wailsjs/go/main/App";
+import {DuplicateSearch, Emulate} from "../wailsjs/go/main/App";
+import SelectPaths from './SelectPaths';
+import DuplicatedFiles from './DuplicatedFiles';
 
 function App() {
-    const [folderList, setFolderList] = useState([]);
-    const [resultText, setResultText] = useState([]);
-    const updateResultText = (result) => setResultText(result);
+    const [duplicatedFiles, setDuplicatedFiles] = useState([]);
     const [loading, setLoading] = useState(false);
     let result;
 
-    function greet() {
-        Greet("").then(updateResultText);
+    function emulate() {
+        Emulate().then(setDuplicatedFiles);
     }
 
-    function pathSelect(e) { 
-        PathSelect("a").then(addFile);
-        e.preventDefault();
-    }
-
-    function addFile(file) {
-        console.log(file)
-        setFolderList([...folderList, file]);
-    }
-
-    function deleteFolderFromList(e) {
-        console.log(e);
-        console.log(e.target.id);
-        const index = e.target.id;
-        const newList = [...folderList];
-        newList.splice(index, 1);
-        setFolderList(newList);
-    }
-
-    function deleteFile(e) {
-        console.log(e)
-        e.preventDefault();
-    }
-
-    function textHighlight(e) {
-        console.log(e)
-        console.log(e.target.id)
-        e.target.classList.toggle("file-selected");
-        parent.document.getElementById(`filename_${e.target.id}`).classList.toggle("file-selected");
-    }
-
-    function runSearch(e) {
+    function runSearch(folderList) {
         setLoading(true);
-        console.log(e)
-        DuplicateSearch(folderList).then(updateResultText).finally(() => setLoading(false));
-    }
-
-    if (loading) {
-        result = <div id="loading">
-                <span>Loading...</span>
-            </div>;
-    } else {
-        result = <div id="result">
-            <button className='btn' onClick={deleteFile}>Delete selected</button>
-            { resultText.map((item, index) => ( 
-                <div id={index} key={index} className={index%2?"odd":"even"}>
-                {item.map((file, fid) => (
-                    <div className="file" key={`${index}_${fid}`}>
-                        <input type="checkbox" id={`${index}_${fid}`} key={`${index}_${fid}`} onClick={textHighlight} />
-                        <span id={`filename_${index}_${fid}`}>{file.path}</span>
-                    </div>
-                ))}
-                </div>
-            ))}
-        </div>;
+        DuplicateSearch(folderList).then(setDuplicatedFiles).finally(() => setLoading(false));
     }
 
     return (
         <div id="App">
-            <div id="input" className="input-box">
-                <button className="btn" onClick={pathSelect}>Add Folter</button>
-                <button className="btn" onClick={greet}>Emulate</button>
-                <button className="btn" onClick={runSearch}>Search Duplicates</button>
-                <div>
-                    {folderList.map((item, index) => (
-                        <div key={index}>
-                            <span>{item}</span>
-                            <button id={index} className="btn" onClick={deleteFolderFromList}>Delete</button>
-                        </div>
-                    ))}  
-                </div>
-            </div>
-            {result}
+            {/* <button className="btn" onClick={emulate}>Emulate</button> */}
+            <SelectPaths runSearch={runSearch}/>
+            <DuplicatedFiles files={duplicatedFiles} loading={loading}/>
         </div>
     )
 }

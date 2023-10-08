@@ -6,10 +6,18 @@ export function DuplicateSearch(arg1) {
   return window['go']['main']['App']['DuplicateSearch'](arg1);
 }
 
-export function Greet(arg1) {
-  return window['go']['main']['App']['Greet'](arg1);
+export function Emulate() {
+  return window['go']['main']['App']['Emulate']();
 }
 
-export function PathSelect(arg1) {
-  return window['go']['main']['App']['PathSelect'](arg1);
+export function OpenFile(arg1) {
+  return window['go']['main']['App']['OpenFile'](arg1);
+}
+
+export function OpenPath(arg1) {
+  return window['go']['main']['App']['OpenPath'](arg1);
+}
+
+export function PathSelect() {
+  return window['go']['main']['App']['PathSelect']();
 }

@@ -3,6 +3,10 @@
 
 export function DuplicateSearch(arg1:Array<string>):Promise<Array<any>>;
 
-export function Greet(arg1:string):Promise<Array<any>>;
+export function Emulate():Promise<Array<any>>;
 
-export function PathSelect(arg1:string):Promise<string>;
+export function OpenFile(arg1:string):Promise<string>;
+
+export function OpenPath(arg1:string):Promise<string>;
+
+export function PathSelect():Promise<string>;

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -30,8 +32,7 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// Greet returns a greeting for the given name
-func (a *App) PathSelect(name string) string {
+func (a *App) PathSelect() string {
 	selection, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
 		Title: "Cabrum",
 	})
@@ -60,8 +61,8 @@ func (a *App) DuplicateSearch(paths []string) [][]*dupfile.File {
 	return df.Run()
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) [][]*dupfile.File {
+// Emulate returns a fake result
+func (a *App) Emulate() [][]*dupfile.File {
 	return [][]*dupfile.File{
 		{
 			&dupfile.File{
@@ -104,6 +105,29 @@ func (a *App) Greet(name string) [][]*dupfile.File {
 			},
 		},
 	}
+}
+
+func (a *App) OpenPath(file string) string {
+	path := filepath.Dir(file)
+	cmd := fmt.Sprintf("open '%s'", path)
+	a.log.Info(cmd)
+	err := exec.Command("/bin/bash", "-c", cmd).Start()
+	if err != nil {
+		a.log.Error(err.Error())
+		return err.Error()
+	}
+	return ""
+}
+
+func (a *App) OpenFile(file string) string {
+	cmd := fmt.Sprintf("open '%s'", file)
+	a.log.Info(cmd)
+	err := exec.Command("/bin/bash", "-c", cmd).Start()
+	if err != nil {
+		a.log.Error(err.Error())
+		return err.Error()
+	}
+	return ""
 }
 
 // Returns the path for the cached file hashes
