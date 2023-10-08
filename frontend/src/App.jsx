@@ -9,6 +9,8 @@ function App() {
     const [folderList, setFolderList] = useState([]);
     const [resultText, setResultText] = useState([]);
     const updateResultText = (result) => setResultText(result);
+    const [loading, setLoading] = useState(false);
+    let result;
 
     function greet() {
         Greet("").then(updateResultText);
@@ -46,8 +48,29 @@ function App() {
     }
 
     function runSearch(e) {
+        setLoading(true);
         console.log(e)
-        DuplicateSearch(folderList).then(updateResultText);
+        DuplicateSearch(folderList).then(updateResultText).finally(() => setLoading(false));
+    }
+
+    if (loading) {
+        result = <div id="loading">
+                <span>Loading...</span>
+            </div>;
+    } else {
+        result = <div id="result">
+            <button className='btn' onClick={deleteFile}>Delete selected</button>
+            { resultText.map((item, index) => ( 
+                <div id={index} key={index} className={index%2?"odd":"even"}>
+                {item.map((file, fid) => (
+                    <div className="file" key={`${index}_${fid}`}>
+                        <input type="checkbox" id={`${index}_${fid}`} key={`${index}_${fid}`} onClick={textHighlight} />
+                        <span id={`filename_${index}_${fid}`}>{file.path}</span>
+                    </div>
+                ))}
+                </div>
+            ))}
+        </div>;
     }
 
     return (
@@ -65,19 +88,7 @@ function App() {
                     ))}  
                 </div>
             </div>
-            <div id="result">
-                <button className='btn' onClick={deleteFile}>Delete selected</button>
-                { resultText.map((item, index) => ( 
-                    <div id={index} key={index} className={index%2?"odd":"even"}>
-                    {item.map((file, fid) => (
-                        <div className="file" key={`${index}_${fid}`}>
-                            <input type="checkbox" id={`${index}_${fid}`} key={`${index}_${fid}`} onClick={textHighlight} />
-                            <span id={`filename_${index}_${fid}`}>{file.path}</span>
-                        </div>
-                    ))}
-                    </div>
-                ))}
-            </div>
+            {result}
         </div>
     )
 }
