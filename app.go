@@ -23,6 +23,7 @@ type App struct {
 func NewApp() *App {
 	app := &App{}
 	app.log = logger.NewDefaultLogger()
+
 	return app
 }
 
@@ -44,6 +45,18 @@ func (a *App) PathSelect() string {
 
 // Greet returns a greeting for the given name
 func (a *App) DuplicateSearch(paths []string) [][]*dupfile.File {
+	// Further event to update the UI on search progress
+	// go func() {
+	// 	counter := 0
+	// 	for {
+	// 		log.Printf("Emitting event %d", counter)
+	// 		runtime.EventsEmit(a.ctx, "abacaxi", fmt.Sprintf("Hello from Go! Event %d", counter))
+
+	// 		time.Sleep(time.Second)
+	// 		counter++
+	// 	}
+	// }()
+
 	a.log.Info(fmt.Sprintf("paths: %v", paths))
 
 	cachePath, err := a.cachePath()
@@ -128,6 +141,39 @@ func (a *App) OpenFile(file string) string {
 		return err.Error()
 	}
 	return ""
+}
+
+type BoolReturn struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error"`
+}
+
+func (a *App) DeleteFile(file string) BoolReturn {
+	a.log.Info(fmt.Sprintf("Deleting file '%s'", file))
+	result, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+		Type:          runtime.QuestionDialog,
+		Title:         "Comfirm Delete",
+		Message:       fmt.Sprintf("Are you sure you want to delete '%s'?", file),
+		Buttons:       []string{"Yes", "No"},
+		DefaultButton: "No",
+		CancelButton:  "No",
+	})
+	if err != nil {
+		a.log.Error(err.Error())
+		return BoolReturn{Success: false, Error: err.Error()}
+	}
+
+	if result == "Yes" {
+		err := os.Remove(file)
+		// err := fmt.Errorf("Not implemented")
+		if err != nil {
+			a.log.Error(err.Error())
+			return BoolReturn{Success: false, Error: err.Error()}
+		}
+		return BoolReturn{Success: true, Error: ""}
+	} else {
+		return BoolReturn{Success: false, Error: ""}
+	}
 }
 
 // Returns the path for the cached file hashes

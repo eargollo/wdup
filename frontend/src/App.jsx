@@ -3,6 +3,7 @@ import './App.css';
 import {DuplicateSearch, Emulate} from "../wailsjs/go/main/App";
 import SelectPaths from './SelectPaths';
 import DuplicatedFiles from './DuplicatedFiles';
+import {EventsOn} from "../wailsjs/runtime/runtime";
 
 function App() {
     const [duplicatedFiles, setDuplicatedFiles] = useState([]);
@@ -18,10 +19,16 @@ function App() {
         DuplicateSearch(folderList).then(setDuplicatedFiles).finally(() => setLoading(false));
     }
 
+    EventsOn("abacaxi", (data) => {
+        console.log(data)
+        parent.document.getElementById("event").innerHTML = data;
+    })
+
     return (
         <div id="App">
             {/* <button className="btn" onClick={emulate}>Emulate</button> */}
             <SelectPaths runSearch={runSearch}/>
+            <div><span id="event"></span></div>
             <DuplicatedFiles files={duplicatedFiles} loading={loading}/>
         </div>
     )
