@@ -1,4 +1,4 @@
- #app {
+ /* #app {
     height: 100vh;
     text-align: center;
 }
@@ -22,9 +22,6 @@
 }
 
 .input-box .btn {
-    /* width: 60px; */
-    /* height: 30px; */
-    /* line-height: 30px; */
     border-radius: 3px;
     border: none;
     margin: 0 0 0 20px;
@@ -41,8 +38,6 @@
     border: none;
     border-radius: 3px;
     outline: none;
-    /* height: 30px; */
-    /* line-height: 30px; */
     width: 70%;
     padding: 0 10px;
     background-color: rgba(240, 240, 240, 1);
@@ -76,11 +71,9 @@
 
  .file-selected {
     color: rgb(255, 46, 46);
-    /* border-color: red; */
-    /* background-color:red; */
 } 
 
 input[type=checkbox] { 
     display:inline-flexbox;
     accent-color: red;
-} 
+}  */

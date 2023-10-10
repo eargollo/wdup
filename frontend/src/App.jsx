@@ -25,7 +25,7 @@ function App() {
     })
 
     return (
-        <div id="App">
+        <div id="App" className="">
             {/* <button className="btn" onClick={emulate}>Emulate</button> */}
             <SelectPaths runSearch={runSearch}/>
             <div><span id="event"></span></div>
