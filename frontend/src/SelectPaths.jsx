@@ -30,7 +30,7 @@ function SelectPaths({runSearch}) {
                         </div> */}
                         <div className="col-2">
                             <button className="btn btn-secondary" onClick={selectAndAddPath}>
-                            <i className="bi-folder-plus"></i> Add
+                                <i className="bi-folder-plus"></i> Add
                             </button>
                         </div>
                     </div>

@@ -12,16 +12,26 @@ import (
 	"time"
 )
 
+type DedupStats struct {
+	Files     int           `json:"files"`
+	Checked   int           `json:"checked"`
+	CacheHits int           `json:"cacheHits"`
+	Started   time.Time     `json:"started"`
+	Finished  time.Time     `json:"finished"`
+	Duration  time.Duration `json:"duration"`
+	Listing   bool          `json:"listing"`
+}
+
 type Dedup struct {
-	paths        []string
-	cachePath    string
-	mu           sync.Mutex
-	addedFiles   int
-	checkedFiles int
-	pq           PriorityQueue
-	fileBySize   map[int64][]*File
-	duplicates   map[string][]*File
-	current      *File
+	paths      []string
+	cache      *FileCache
+	mu         sync.Mutex
+	pq         PriorityQueue
+	fileBySize map[int64][]*File
+	duplicates map[string][]*File
+	current    *File
+	observer   Observer
+	stats      DedupStats
 }
 
 func New(opts ...DedupOption) (*Dedup, error) {
@@ -31,27 +41,38 @@ func New(opts ...DedupOption) (*Dedup, error) {
 	d.duplicates = make(map[string][]*File)
 
 	for _, opt := range opts {
-		opt(&d)
-	}
-
-	// Cache
-	return &d, nil
-}
-
-func (d *Dedup) Run() [][]*File {
-	var cache *FileCache
-	if d.cachePath != "" {
-		var err error
-		cache, err = NewFileCache(d.cachePath)
+		err := opt(&d)
 		if err != nil {
-			log.Printf("error: could not initialize cache: %v", err)
-		} else {
-			defer cache.Close()
+			return &d, err
 		}
 	}
 
-	var prod sync.WaitGroup
+	return &d, nil
+}
 
+func (d *Dedup) Close() {
+	if d.cache != nil {
+		d.cache.Close()
+	}
+}
+
+func (d *Dedup) observe(tp string, description string) {
+	if d.observer != nil {
+		event := &ObservableEvent{
+			Type:        tp,
+			Description: description,
+			Stats:       d.stats,
+		}
+		d.observer(event)
+	}
+}
+
+func (d *Dedup) Run() [][]*File {
+
+	var prod sync.WaitGroup
+	//Producer
+	d.stats.Started = time.Now()
+	d.stats.Listing = true
 	for _, path := range d.paths {
 		walkPath := path
 		prod.Add(1)
@@ -71,12 +92,12 @@ func (d *Dedup) Run() [][]*File {
 		for {
 			select {
 			case <-done:
-				log.Printf("Got signal that producers have finished")
+				d.observe("ListFiles", "Finished listing all files")
 				prodFinished = true
 			default:
-				ok := d.validateNext(cache)
+				ok := d.validateNext()
 				if !ok && prodFinished {
-					log.Printf("Finished processing")
+					d.observe("FindDuplicates", "Finished finding duplicates")
 					return
 				}
 			}
@@ -90,28 +111,41 @@ func (d *Dedup) Run() [][]*File {
 	go func() {
 		defer track.Done()
 		start := time.Now()
-		last := time.Now()
+		// last := time.Now()
 		for {
 			select {
 			case <-finished:
-				log.Printf("Processed %d files in %s time", d.checkedFiles, time.Since(start))
+				d.stats.Duration = time.Since(start)
+				d.observe("Progress",
+					fmt.Sprintf("Processed %d files in %s time",
+						d.stats.Checked,
+						time.Since(start)))
 				return
 			default:
-				if time.Since(last) > (10 * time.Second) {
-					last = time.Now()
-					total := d.addedFiles
-					count := d.checkedFiles
+				// if time.Since(last) > (10 * time.Second) {
 
-					perc := count * 10000 / total
-					percR := float32(perc) / 100
-					file := d.current
-					if file == nil {
-						log.Printf("Done %d of %d files [%.2f%%]", count, total, percR)
-					} else {
-						log.Printf("Done %d of %d files [%.2f%%] (%s %s) ", count, total, percR, file.Name, ByteCountIEC(file.Size))
-					}
-					time.Sleep(250 * time.Microsecond)
+				// last = time.Now()
+				total := d.stats.Files
+				count := d.stats.Checked
+
+				perc := 0
+				if total > 0 {
+					perc = count * 10000 / total
 				}
+				percR := float32(perc) / 100
+				file := d.current
+				message := ""
+				if d.stats.Listing {
+					message = "*"
+				}
+				if file == nil {
+					message = fmt.Sprintf("Done %d of %d%s files [%.2f%%]", count, total, message, percR)
+				} else {
+					message = fmt.Sprintf("Done %d of %d%s files [%.2f%%] (%s %s) ", count, total, message, percR, file.Name, ByteCountIEC(file.Size))
+				}
+				d.observe("Progress", message)
+				time.Sleep(250 * time.Millisecond)
+				// }
 			}
 		}
 	}()
@@ -120,11 +154,15 @@ func (d *Dedup) Run() [][]*File {
 	log.Printf("Finished listing files")
 	// Signal producers are finished
 	done <- true
+	d.stats.Listing = false
 	cons.Wait()
 	log.Printf("Finished finding duplicates")
 	// Signal tracker
 	finished <- true
 	track.Wait()
+	d.stats.Finished = time.Now()
+	d.stats.Duration = d.stats.Finished.Sub(d.stats.Started)
+	d.observe("Progress", fmt.Sprintf("Finished! Files: %d Duration %s", d.stats.Checked, d.stats.Duration))
 	// Sort result
 	return d.duplicatedList()
 }
@@ -133,6 +171,7 @@ func (d *Dedup) scanFolder(path string) {
 	log.Printf("Starting walk '%s'...", path)
 	err := filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
+			d.observe("Error", fmt.Sprintf("Error scanning path %s: %v", path, err))
 			log.Printf("ERROR: Walk error: %v", err)
 			return nil
 		}
@@ -155,7 +194,7 @@ func (d *Dedup) push(file File) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	d.addedFiles++
+	d.stats.Files++
 
 	heap.Push(&d.pq, &file)
 }
@@ -167,11 +206,11 @@ func (d *Dedup) pop() *File {
 	if len(d.pq) == 0 {
 		return nil
 	}
-	d.checkedFiles++
+	d.stats.Checked++
 	return heap.Pop(&d.pq).(*File)
 }
 
-func (d *Dedup) validateNext(cache *FileCache) bool {
+func (d *Dedup) validateNext() bool {
 	file := d.pop()
 	d.current = file
 
@@ -188,16 +227,18 @@ func (d *Dedup) validateNext(cache *FileCache) bool {
 	}
 
 	// There is a file with the same size, compare MD5s
-	fileHash, err := file.CryptoHash(cache)
+	fileHash, err := file.CryptoHash(d.cache)
 	if err != nil {
+		d.observe("Error", fmt.Sprintf("Error calculating MD5 for %s: %v", file.AbsPath(), err))
 		log.Printf("Error: Could not calculate MD5 for '%s': %v", file.AbsPath(), err)
 		return true
 	}
 
 	for _, comp := range fByS {
 		// compare md5 with existing files with the same size
-		compHash, err := comp.CryptoHash(cache)
+		compHash, err := comp.CryptoHash(d.cache)
 		if err != nil {
+			d.observe("Error", fmt.Sprintf("Error calculating MD5 for %s: %v", file.AbsPath(), err))
 			log.Printf("Error: Could not calculate MD5 for '%s': %v", comp.AbsPath(), err)
 			continue
 		}

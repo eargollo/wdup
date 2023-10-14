@@ -45,18 +45,6 @@ func (a *App) PathSelect() string {
 
 // Greet returns a greeting for the given name
 func (a *App) DuplicateSearch(paths []string) [][]*dupfile.File {
-	// Further event to update the UI on search progress
-	// go func() {
-	// 	counter := 0
-	// 	for {
-	// 		log.Printf("Emitting event %d", counter)
-	// 		runtime.EventsEmit(a.ctx, "abacaxi", fmt.Sprintf("Hello from Go! Event %d", counter))
-
-	// 		time.Sleep(time.Second)
-	// 		counter++
-	// 	}
-	// }()
-
 	a.log.Info(fmt.Sprintf("paths: %v", paths))
 
 	cachePath, err := a.cachePath()
@@ -65,11 +53,19 @@ func (a *App) DuplicateSearch(paths []string) [][]*dupfile.File {
 		return [][]*dupfile.File{}
 	}
 
-	df, err := dupfile.New(dupfile.WithPaths(paths), dupfile.WithCache(cachePath))
+	df, err := dupfile.New(
+		dupfile.WithPaths(paths),
+		dupfile.WithCache(cachePath),
+		dupfile.WithObserver(func(event *dupfile.ObservableEvent) {
+			log.Printf("Emitting event [%s] %s", event.Type, event.Description)
+			runtime.EventsEmit(a.ctx, event.Type, event)
+		}),
+	)
 	if err != nil {
 		a.log.Error(err.Error())
 		return [][]*dupfile.File{}
 	}
+	defer df.Close()
 
 	return df.Run()
 }

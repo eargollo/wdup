@@ -7,6 +7,8 @@ import (
 
 func TestNew(t *testing.T) {
 	tempDir := t.TempDir()
+	tmpCache, _ := NewFileCache(tempDir)
+	tmpCache.Close()
 
 	tests := []struct {
 		name    string
@@ -30,7 +32,7 @@ func TestNew(t *testing.T) {
 				WithPaths([]string{"/Home", "/Volumes"}),
 				WithCache(tempDir),
 			},
-			want: &Dedup{paths: []string{"/Home", "/Volumes"}, cachePath: tempDir,
+			want: &Dedup{paths: []string{"/Home", "/Volumes"}, cache: tmpCache,
 				fileBySize: map[int64][]*File{}, duplicates: map[string][]*File{}},
 			wantErr: false,
 		},
@@ -38,8 +40,15 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := New(tt.opts...)
+			defer got.Close()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("err = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.want.cache != nil {
+				if got.cache == nil {
+					t.Errorf("New() = %v, want %v", got.cache, tt.want.cache)
+				}
+				tt.want.cache = got.cache
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("New() = %v, want %v", got, tt.want)

@@ -19,9 +19,9 @@ function App() {
         DuplicateSearch(folderList).then(setDuplicatedFiles).finally(() => setLoading(false));
     }
 
-    EventsOn("abacaxi", (data) => {
+    EventsOn("Progress", (data) => {
         console.log(data)
-        parent.document.getElementById("event").innerHTML = data;
+        parent.document.getElementById("event").innerHTML = data.description;
     })
 
     return (
