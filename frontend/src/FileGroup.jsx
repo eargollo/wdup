@@ -35,7 +35,7 @@ function FileGroup({id, files}) {
                 setAlert({open: true, type: "danger", message: error});
                 console.log(error)
             } else {
-                result = [...duplicatedFiles];
+                const result = [...duplicatedFiles];
                 result.splice(id, 1);
                 setDuplicatedFiles(result);
             }

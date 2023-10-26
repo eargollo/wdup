@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	goruntime "runtime"
+	"strings"
 
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -118,9 +120,16 @@ func (a *App) Emulate() [][]*dupfile.File {
 
 func (a *App) OpenPath(file string) string {
 	path := filepath.Dir(file)
-	cmd := fmt.Sprintf("open '%s'", path)
-	a.log.Info(cmd)
-	err := exec.Command("/bin/bash", "-c", cmd).Start()
+
+	cmd := []string{}
+	if goruntime.GOOS == "windows" {
+		cmd = append(cmd, "explorer", "/select,", file) //fmt.Sprintf("explorer /select '%s'", file)
+	} else {
+		cmd = append(cmd, "/bin/bash", "-c", "open", path)
+	}
+
+	a.log.Info(strings.Join(cmd, " "))
+	err := exec.Command(cmd[0], cmd[1:]...).Start()
 	if err != nil {
 		a.log.Error(err.Error())
 		return err.Error()
@@ -129,9 +138,16 @@ func (a *App) OpenPath(file string) string {
 }
 
 func (a *App) OpenFile(file string) string {
-	cmd := fmt.Sprintf("open '%s'", file)
-	a.log.Info(cmd)
-	err := exec.Command("/bin/bash", "-c", cmd).Start()
+	cmd := []string{}
+	if goruntime.GOOS == "windows" {
+		cmd = append(cmd, "cmd", "/C", "start", "", file) //fmt.Sprintf("explorer /select '%s'", file)
+		//cmd = append(cmd, "start", file) //fmt.Sprintf("explorer /select '%s'", file)
+	} else {
+		cmd = append(cmd, "/bin/bash", "-c", "open", file)
+	}
+
+	a.log.Info(strings.Join(cmd, " "))
+	err := exec.Command(cmd[0], cmd...).Start()
 	if err != nil {
 		a.log.Error(err.Error())
 		return err.Error()
